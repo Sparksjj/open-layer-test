@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@my-own-org/map": ["libs/client/map/src/index.ts"],
+      "@my-own-org/route-data-access": [
+        "libs/client/route-data-access/src/index.ts"
+      ],
+      "@my-own-org/route-select": ["libs/client/route-select/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

@@ -1,0 +1,42 @@
+{
+  "stylelint.validate": ["css", "scss"],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "editor.tabSize": 2,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "never"
+    }
+  },
+  "[json]": {
+    "editor.wordWrap": "on"
+  },
+  "css.lint.important": "warning",
+  "editor.unusualLineTerminators": "auto",
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": false,
+  "html.format.wrapAttributes": "force-aligned",
+  "html.format.enable": true,
+  "html.format.wrapLineLength": 140,
+  "html.format.extraLiners": "",
+  "html.format.indentInnerHtml": true,
+  "html.format.indentHandlebars": true,
+  "html.format.maxPreserveNewLines": null,
+  "scss.lint.important": "warning",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "vetur.format.defaultFormatter.html": "js-beautify-html",
+  "vetur.format.defaultFormatterOptions": {
+    "js-beautify-html": {
+      "max_preserve_newlines": 3,
+      "wrap_attributes": "force-aligned"
+    }
+  },
+  "vetur.format.scriptInitialIndent": true,
+  "vetur.format.styleInitialIndent": true,
+  "htmlhint.options": { "doctype-first": false },
+  "htmlhint.documentSelector": ["html", "htm"],
+  "editor.unicodeHighlight.ambiguousCharacters": false
+}

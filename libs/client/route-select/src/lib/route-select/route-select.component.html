@@ -1,0 +1,9 @@
+<select [formControl]="contol">
+  <option [value]="null">--Please choose an option--</option>
+
+  @for (item of data(); track $index) {
+    <option [ngValue]="item">
+      {{ item.route_id }} {{ item.from_port }} => {{ item.to_port }}
+    </option>
+  }
+</select>

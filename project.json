@@ -20,9 +20,13 @@
           {
             "glob": "**/*",
             "input": "public"
+          },
+          {
+            "glob": "**/*",
+            "input": "libs/client/map/src/assets"
           }
         ],
-        "styles": ["./src/styles.scss"],
+        "styles": ["./src/styles.scss", "node_modules/ol/ol.css"],
         "scripts": [],
         "server": "src/main.server.ts",
         "prerender": true,
@@ -82,7 +86,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectName}"],
       "options": {
-        "jestConfig": "jest.config.ts"
+        "jestConfig": "jest.config.app.ts"
       }
     }
   }
