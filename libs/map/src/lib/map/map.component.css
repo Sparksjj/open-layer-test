@@ -1,0 +1,22 @@
+.map {
+  width: 100vw;
+  height: 100vh;
+  background-color: aqua;
+}
+
+button {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+lib-chart {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+button {
+  background-color: red;
+  color: white;
+}
