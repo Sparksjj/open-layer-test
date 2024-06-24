@@ -18,6 +18,7 @@ import {
   Subject,
   Subscription,
   distinctUntilChanged,
+  filter,
   switchMap,
   tap,
   throttleTime,
@@ -32,7 +33,8 @@ import {
   styleUrl: './chart.component.css',
 })
 export class ChartComponent implements OnInit, OnDestroy, OnChanges {
-  @ViewChild(BaseChartDirective) private chart!: BaseChartDirective;
+  @ViewChild(BaseChartDirective, { static: false })
+  private chart!: BaseChartDirective;
 
   pointClick = output<number>();
 
@@ -90,11 +92,14 @@ export class ChartComponent implements OnInit, OnDestroy, OnChanges {
       .pipe(
         distinctUntilChanged(),
         throttleTime(100),
+        filter(() => !!this.chart),
         tap(() => this.chart.update()),
         switchMap(() => timer(300))
       )
       .subscribe(() => {
-        this.chart.update();
+        if (this.chart) {
+          this.chart.update();
+        }
       });
   }
 
