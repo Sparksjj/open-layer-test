@@ -1,0 +1,11 @@
+@if (activeRoute()) {
+  @if (chardData(); as data) {
+    <canvas
+      id="chart-canvas"
+      baseChart
+      [data]="data"
+      [type]="'line'"
+      [options]="chartOptions">
+    </canvas>
+  }
+}

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { Route } from './rote';
 
 @Injectable({
@@ -17,7 +17,14 @@ export class DataAccessService {
       )
       .pipe(
         map(data => {
-          return csvToJson(data);
+          return csvToJson(data).filter(route => route?.points);
+        }),
+        tap(routes => {
+          // move to timeout to avoid blocking the main thread
+          setTimeout(() => {
+            // add distance to each point for animation transform map distance to point index
+            calculateDistance(routes);
+          }, 500);
         })
       );
   }
@@ -60,4 +67,22 @@ function csvToJson(data: string): Route[] {
   });
 
   return output;
+}
+
+function calculateDistance(routes: Route[]): void {
+  routes.forEach(route => {
+    route.all_distance = 0;
+    route.all_distance = route.points.reduce((distance, point, i) => {
+      const priveosPoint = route.points[i - 1];
+      let pointDistance = 0;
+
+      if (priveosPoint) {
+        pointDistance = (point[2] - priveosPoint[2]) * point[3];
+      }
+
+      point.push(pointDistance);
+
+      return distance + pointDistance;
+    }, route.all_distance);
+  });
 }

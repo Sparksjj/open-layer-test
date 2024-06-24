@@ -1,0 +1,6 @@
+#chart-canvas {
+  width: 700px;
+  max-width: 100%;
+  max-height: 200px;
+  background-color: rgba(225, 225, 225, 0.6);
+}

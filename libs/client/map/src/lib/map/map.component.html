@@ -4,6 +4,10 @@
 
 <lib-route-select></lib-route-select>
 
+<lib-chart
+  (pointClick)="goToPoint($event)"
+  [distance]="animationData.distance"></lib-chart>
+
 @if (activeRoute()) {
   <button
     type="button"

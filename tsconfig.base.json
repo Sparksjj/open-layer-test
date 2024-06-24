@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@my-own-org/chart": ["libs/client/chart/src/index.ts"],
       "@my-own-org/map": ["libs/client/map/src/index.ts"],
       "@my-own-org/route-data-access": [
         "libs/client/route-data-access/src/index.ts"

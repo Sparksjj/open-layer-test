@@ -1,5 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, PLATFORM_ID, effect, inject } from '@angular/core';
+import { ChartComponent } from '@my-own-org/chart';
 import { DataStorageService, Route } from '@my-own-org/route-data-access';
 import { RouteSelectComponent } from '@my-own-org/route-select';
 
@@ -34,7 +35,7 @@ interface AnimationData {
 @Component({
   selector: 'lib-map',
   standalone: true,
-  imports: [CommonModule, RouteSelectComponent],
+  imports: [CommonModule, RouteSelectComponent, ChartComponent],
   templateUrl: './map.component.html',
   styleUrl: './map.component.css',
 })
@@ -102,8 +103,41 @@ export class MapComponent implements OnInit {
     }
   }
 
+  goToPoint(i: number) {
+    const coord = this.animationData.routeFeature.getCoordinates()[i - 1];
+    const activeRoute = this.activeRoute();
+    if (activeRoute) {
+      this.animationData.distance = Route.getDistanceFromPointIndex(
+        i,
+        activeRoute.points,
+        activeRoute.all_distance
+      );
+    }
+
+    this.animationData.position.setCoordinates(coord);
+
+    this.animationData.geoMarker.setGeometry(this.animationData.position);
+    this.animationData.geoMarker.setStyle(this.styles.geoMarker);
+    this.map.render();
+  }
+
   private moveFeature(event: RenderEvent) {
-    const speed = 300;
+    const activeRoute = this.activeRoute();
+    if (!activeRoute) {
+      return;
+    }
+    const i = Route.getPointIndexFromDistance(
+      this.animationData.distance,
+      activeRoute.points,
+      activeRoute.all_distance
+    );
+
+    // change speed acording to the point
+    let speed = 8 * activeRoute.points[i][3];
+    if (speed < 0.1) {
+      speed = 0.1;
+    }
+
     const time = event.frameState?.time || 0;
     const elapsedTime = time - (this.animationData.lastTime || 0);
 

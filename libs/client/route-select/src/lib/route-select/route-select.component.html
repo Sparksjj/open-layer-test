@@ -1,5 +1,5 @@
 <select [formControl]="contol">
-  <option [value]="null">--Please choose an option--</option>
+  <option [ngValue]="null">--Please choose an option--</option>
 
   @for (item of data(); track $index) {
     <option [ngValue]="item">

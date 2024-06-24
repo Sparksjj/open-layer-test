@@ -18,7 +18,8 @@
               }
             ]
           }
-        ]
+        ],
+        "@typescript-eslint/no-unsafe-declaration-merging": null
       }
     },
     {
