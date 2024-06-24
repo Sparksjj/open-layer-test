@@ -1,3 +1,13 @@
-<div id="map" class="map"></div>
+<div
+  id="map"
+  class="map"></div>
 
 <lib-route-select></lib-route-select>
+
+@if (activeRoute()) {
+  <button
+    type="button"
+    (click)="toggleAnimation()">
+    {{ animationData.animating ? 'Stop and reset' : 'Start animation' }}
+  </button>
+}

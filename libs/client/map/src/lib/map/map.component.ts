@@ -2,6 +2,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, PLATFORM_ID, effect, inject } from '@angular/core';
 import { DataStorageService, Route } from '@my-own-org/route-data-access';
 import { RouteSelectComponent } from '@my-own-org/route-select';
+
 import Feature from 'ol/Feature.js';
 import Map from 'ol/Map.js';
 import View from 'ol/View';
@@ -10,11 +11,25 @@ import Point from 'ol/geom/Point';
 import { Tile as TileLayer } from 'ol/layer.js';
 import VectorLayer from 'ol/layer/Vector';
 import { transform } from 'ol/proj';
+import { getVectorContext } from 'ol/render.js';
+import RenderEvent from 'ol/render/Event';
 import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
 import Icon from 'ol/style/Icon';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
+
+interface AnimationData {
+  animating: boolean;
+  distance: number;
+  activePointIndex: number;
+  lastTime: number;
+  geoMarker: Feature;
+  startPosition: Feature;
+  position: Point;
+  vectorLayer: VectorLayer<Feature<Point> | Feature<LineString>>;
+  routeFeature: LineString;
+}
 
 @Component({
   selector: 'lib-map',
@@ -26,6 +41,15 @@ import Style from 'ol/style/Style';
 export class MapComponent implements OnInit {
   readonly isBrouser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  activeRoute = inject(DataStorageService).activeRoute;
+
+  animationData: AnimationData = {
+    animating: false,
+    distance: 0,
+    lastTime: 0,
+    activePointIndex: 0,
+  } as AnimationData;
+
   private serverProj = 'EPSG:4326';
 
   private olProj = 'EPSG:900913';
@@ -34,22 +58,74 @@ export class MapComponent implements OnInit {
 
   private map!: Map;
 
-  private activeRoute = inject(DataStorageService).activeRoute;
-
   private activeRouteEffect = effect(() => {
     const route = this.activeRoute();
     if (route) {
       this.initNewRoute(route);
     } else {
-      console.log('empty');
+      if (this.map) {
+        if (this.animationData.animating) {
+          this.toggleAnimation();
+        }
+        this.clearMap();
+      }
     }
   });
+
+  private styles!: {
+    iconStart: Style;
+    iconEnd: Style;
+    geoMarker: Style;
+  };
 
   ngOnInit(): void {
     if (this.isBrouser) {
       this.initMap();
+      this.initStyles();
       this.getUserLocation();
     }
+  }
+
+  // just for fun
+  toggleAnimation(): void {
+    this.animationData.animating = !this.animationData.animating;
+    if (this.animationData.animating) {
+      this.animationData.lastTime = Date.now();
+      this.animationData.vectorLayer.on(
+        'postrender',
+        this.moveFeature.bind(this)
+      );
+      // hide geoMarker and trigger map render through change event
+      this.animationData.geoMarker.setGeometry(undefined);
+    } else {
+      this.resetAnimationData();
+    }
+  }
+
+  private moveFeature(event: RenderEvent) {
+    const speed = 300;
+    const time = event.frameState?.time || 0;
+    const elapsedTime = time - (this.animationData.lastTime || 0);
+
+    this.animationData.distance =
+      (this.animationData.distance + (speed * elapsedTime) / 1000000) % 2;
+    this.animationData.lastTime = time;
+
+    if (this.animationData.distance >= 1) {
+      this.toggleAnimation();
+      return;
+    }
+
+    const currentCoordinate = this.animationData.routeFeature.getCoordinateAt(
+      this.animationData.distance
+    );
+
+    this.animationData.position.setCoordinates(currentCoordinate);
+    const vectorContext = getVectorContext(event);
+    vectorContext.setStyle(this.styles.geoMarker);
+    vectorContext.drawGeometry(this.animationData.position);
+    // tell OpenLayers to continue the postrender animation
+    this.map.render();
   }
 
   private initMap(): void {
@@ -75,10 +151,13 @@ export class MapComponent implements OnInit {
   private initNewRoute(route: Route): void {
     this.clearMap();
 
-    const currPath = new LineString(route.points).transform(
-      'EPSG:4326',
-      'EPSG:3857'
-    );
+    if (this.animationData.animating) {
+      this.toggleAnimation();
+    }
+
+    const currPath = new LineString(
+      route.points.map(el => el.slice(0, 2))
+    ).transform('EPSG:4326', 'EPSG:3857');
 
     const routeFeature = new Feature({
       type: 'route',
@@ -110,39 +189,12 @@ export class MapComponent implements OnInit {
       ),
     });
 
-    const position = startMarker.getGeometry()?.clone();
+    const position = startMarker.getGeometry()?.clone() as Point;
 
     const geoMarker = new Feature({
       type: 'geoMarker',
       geometry: position,
     });
-
-    const styles = {
-      iconStart: new Style({
-        image: new Icon({
-          anchor: [0.14, 1],
-          width: 40,
-          height: 40,
-          src: '/checkered-flag.png',
-        }),
-      }),
-      iconEnd: new Style({
-        image: new Icon({
-          anchor: [0.5, 1],
-          width: 40,
-          height: 40,
-          src: '/location.png',
-        }),
-      }),
-      geoMarker: new Style({
-        image: new Icon({
-          anchor: [0.5, 0.5],
-          width: 22,
-          height: 22,
-          src: '/boat.png',
-        }),
-      }),
-    };
 
     const vectorLayer = new VectorLayer({
       source: new VectorSource({
@@ -155,23 +207,16 @@ export class MapComponent implements OnInit {
           const coordinates = (
             feature.getGeometry() as LineString
           ).getCoordinates();
+
           for (let i = 0; i < coordinates.length - 1; i++) {
-            let color;
-            const elevation = Math.random();
-
-            if (elevation >= 0.3 && elevation < 0.7) {
-              color = 'blue';
-            } else if (elevation >= 0.7) {
-              color = 'green';
-            } else {
-              color = 'black';
-            }
-
             styles.push(
               new Style({
                 geometry: new LineString(coordinates.slice(i, i + 2)),
                 stroke: new Stroke({
-                  color: color,
+                  color: getColor(
+                    this.activeRoute()?.points[i][3] as number,
+                    15
+                  ),
                   width: 3,
                 }),
               })
@@ -181,7 +226,7 @@ export class MapComponent implements OnInit {
           return styles;
         }
 
-        return styles[
+        return this.styles[
           feature.get('type') as 'iconStart' | 'iconEnd' | 'geoMarker'
         ];
       },
@@ -196,6 +241,13 @@ export class MapComponent implements OnInit {
         .getView()
         .fit(extent, { padding: [100, 100, 100, 100], duration: 1000 });
     }
+
+    // save data for animation
+    this.animationData.vectorLayer = vectorLayer;
+    this.animationData.position = position;
+    this.animationData.routeFeature = routeFeature.getGeometry() as LineString;
+    this.animationData.startPosition = startMarker;
+    this.animationData.geoMarker = geoMarker;
   }
 
   /**
@@ -210,6 +262,10 @@ export class MapComponent implements OnInit {
 
     navigator.geolocation.getCurrentPosition(
       pos => {
+        if (this.activeRoute()) {
+          return;
+        }
+
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         const view = this.map.getView();
@@ -237,4 +293,51 @@ export class MapComponent implements OnInit {
       }
     });
   }
+
+  private resetAnimationData(): void {
+    const listner = this.animationData.vectorLayer.getListeners('postrender');
+
+    if (listner?.length) {
+      this.animationData.vectorLayer.un('postrender', listner[0] as never);
+    }
+
+    this.animationData.distance = 0;
+    this.animationData.activePointIndex = 0;
+    this.animationData.geoMarker.setGeometry(
+      this.animationData.startPosition.getGeometry()
+    );
+  }
+
+  private initStyles(): void {
+    this.styles = {
+      iconStart: new Style({
+        image: new Icon({
+          anchor: [0.14, 1],
+          width: 40,
+          height: 40,
+          src: 'checkered-flag.png',
+        }),
+      }),
+      iconEnd: new Style({
+        image: new Icon({
+          anchor: [0.5, 1],
+          width: 40,
+          height: 40,
+          src: 'location.png',
+        }),
+      }),
+      geoMarker: new Style({
+        image: new Icon({
+          anchor: [0.5, 0.5],
+          width: 22,
+          height: 22,
+          src: '/boat.png',
+        }),
+      }),
+    };
+  }
+}
+
+function getColor(speed: number, maxSpeed: number): string {
+  return `hsl(${(120 * speed) / maxSpeed}, 100%, 50%)`;
 }
