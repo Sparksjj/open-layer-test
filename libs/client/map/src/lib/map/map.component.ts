@@ -331,7 +331,7 @@ export class MapComponent implements OnInit {
           anchor: [0.5, 0.5],
           width: 22,
           height: 22,
-          src: '/boat.png',
+          src: 'boat.png',
         }),
       }),
     };
